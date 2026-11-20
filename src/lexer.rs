@@ -33,9 +33,25 @@ impl Lexer {
     pub fn lex(&mut self) -> Vec<Token> {
         let mut tokens: Vec<Token> = Vec::new();
         while let Some(c) = self.current_char {
+            if c == '\n' {
+                self.line += 1;
+                self.advance();
+                continue;
+            }
+
             if c.is_whitespace() {
                 self.advance();
                 continue;
+            }
+
+            // Handle comments
+            if c == ';' {
+                while let Some(c) = self.current_char
+                    && c != '\n'
+                {
+                    self.advance();
+                }
+                self.advance();
             }
 
             tokens.push(self.token());
@@ -122,10 +138,7 @@ impl Lexer {
             Some('{') => TokenType::LCurly,
             Some('}') => TokenType::RCurly,
             Some(':') => TokenType::Colon,
-            Some(';') => {
-                self.line += 1;
-                TokenType::Semicolon
-            }
+            Some(',') => TokenType::Comma,
             None => TokenType::Eof,
 
             Some(c) if c.is_alphabetic() || c == '_' => {
@@ -155,7 +168,17 @@ impl Lexer {
                 }
             }
 
-            _ => panic!("Error on line {}", self.line),
+            _ => {
+                if self.current_char.is_some() {
+                    panic!(
+                        "Error on line {}, with character: {}",
+                        self.line,
+                        self.current_char.unwrap()
+                    );
+                } else {
+                    panic!("Error on line {}", self.line);
+                }
+            }
         };
 
         self.advance();

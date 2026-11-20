@@ -21,7 +21,7 @@ pub enum TokenType {
     LCurly,
     RCurly,
     Colon,
-    Semicolon,
+    Comma,
     Eof,
 
     // Valued

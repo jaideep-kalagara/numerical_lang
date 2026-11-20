@@ -7,8 +7,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut lexer = Lexer::new(to_be_lexed);
     let tokens = lexer.lex();
+    let mut tokens_string = String::new();
     for token in tokens {
-        println!("{}", token)
+        tokens_string.push_str(&token.to_string());
+        tokens_string.push_str("\n");
     }
+
+    fs::write("tokens", tokens_string)?;
     Ok(())
 }

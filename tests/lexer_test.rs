@@ -10,12 +10,13 @@ use crate::common::assert_lexer;
 #[test]
 fn basic_test() {
     assert_lexer(
-        "+-*/",
+        "+-*/,",
         vec![
             Token::new(TokenType::Plus, None),
             Token::new(TokenType::Minus, None),
             Token::new(TokenType::Multiply, None),
             Token::new(TokenType::Divide, None),
+            Token::new(TokenType::Comma, None),
         ],
     );
 }
@@ -99,11 +100,30 @@ fn keyword_test() {
             Some(TokenValue::Keyword(Keyword::Let)),
         )],
     );
+    assert_lexer(
+        "func",
+        vec![Token::new(
+            TokenType::Keyword,
+            Some(TokenValue::Keyword(Keyword::Func)),
+        )],
+    );
+    assert_lexer(
+        "return",
+        vec![Token::new(
+            TokenType::Keyword,
+            Some(TokenValue::Keyword(Keyword::Return)),
+        )],
+    );
+}
+
+#[test]
+fn comment_test() {
+    assert_lexer("; Test comment", vec![Token::new(TokenType::Eof, None)]);
 }
 
 #[test]
 #[should_panic(expected = "Error on line 2")]
 fn error_test() {
-    let mut lexer = Lexer::new("hi+-; |".to_string());
+    let mut lexer = Lexer::new("hi+-\n |".to_string());
     lexer.lex();
 }
