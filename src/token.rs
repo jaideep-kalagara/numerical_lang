@@ -11,23 +11,32 @@ pub enum TokenType {
     Multiply,
     Divide,
     Equal,
+    DoubleEqual,
+    GreaterThan,
+    GreaterThanEqualTo,
+    LesserThan,
+    LesserThanEqualTo,
     LParen,
     RParen,
     LCurly,
     RCurly,
+    Colon,
     Semicolon,
     Eof,
 
     // Valued
     Integer,
+    Float,
     Keyword,
     Identifier,
 }
 
-#[derive(Debug, Clone, PartialEq, strum::Display)]
+#[derive(Debug, Clone, PartialEq, strum::Display, strum::EnumIs)]
 pub enum TokenValue {
     #[strum(to_string = "{0}")]
     Integer(i64),
+    #[strum(to_string = "{0}")]
+    Float(f64),
     #[strum(to_string = "{0}")]
     Keyword(keyword::Keyword),
     #[strum(to_string = "{0}")]

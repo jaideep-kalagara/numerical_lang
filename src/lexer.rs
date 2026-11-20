@@ -25,7 +25,7 @@ impl Lexer {
             input: input.clone(),
             position: 0,
             lookahead_position: 0,
-            line: 0,
+            line: 1,
             current_char: input.chars().nth(0),
         }
     }
@@ -59,6 +59,31 @@ impl Lexer {
         buffer
     }
 
+    pub fn get_number(&mut self) -> TokenValue {
+        let mut buffer = String::new();
+
+        while let Some(c) = self.current_char {
+            if c.is_numeric() || c == '.' {
+                buffer.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        if buffer.contains(".") {
+            let float: f64 = buffer
+                .parse()
+                .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
+            TokenValue::Float(float)
+        } else {
+            let int: i64 = buffer
+                .parse()
+                .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
+            TokenValue::Integer(int)
+        }
+    }
+
     /// gets the next token
     pub fn token(&mut self) -> Token {
         let mut value: Option<TokenValue> = None;
@@ -68,11 +93,35 @@ impl Lexer {
             Some('-') => TokenType::Minus,
             Some('/') => TokenType::Divide,
             Some('*') => TokenType::Multiply,
-            Some('=') => TokenType::Equal,
+            Some('=') => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenType::DoubleEqual
+                } else {
+                    TokenType::Equal
+                }
+            }
+            Some('>') => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenType::GreaterThanEqualTo
+                } else {
+                    TokenType::GreaterThan
+                }
+            }
+            Some('<') => {
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenType::LesserThanEqualTo
+                } else {
+                    TokenType::LesserThan
+                }
+            }
             Some('(') => TokenType::LParen,
             Some(')') => TokenType::RParen,
             Some('{') => TokenType::LCurly,
             Some('}') => TokenType::RCurly,
+            Some(':') => TokenType::Colon,
             Some(';') => {
                 self.line += 1;
                 TokenType::Semicolon
@@ -95,7 +144,18 @@ impl Lexer {
                 }
             }
 
-            _ => panic!("ERROR"),
+            // TODO: decide if numbers can start with decimal point
+            Some(c) if c.is_numeric() => {
+                value = Some(self.get_number());
+                if value.clone().unwrap().is_float() {
+                    // TODO: no unwarp
+                    return Token::new(TokenType::Float, value);
+                } else {
+                    return Token::new(TokenType::Integer, value);
+                }
+            }
+
+            _ => panic!("Error on line {}", self.line),
         };
 
         self.advance();

@@ -3,4 +3,5 @@
 pub enum Keyword {
     Let,
     If,
+    Func,
 }
