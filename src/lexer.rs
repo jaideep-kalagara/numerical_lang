@@ -1,0 +1,114 @@
+use std::str::FromStr;
+
+use strum::VariantNames;
+
+use crate::{
+    keyword::{self},
+    token::{
+        Token,
+        TokenType::{self},
+        TokenValue::{self},
+    },
+};
+
+pub struct Lexer {
+    input: String,
+    position: usize,
+    lookahead_position: usize,
+    line: usize,
+    pub current_char: Option<char>,
+}
+
+impl Lexer {
+    pub fn new(input: String) -> Self {
+        Self {
+            input: input.clone(),
+            position: 0,
+            lookahead_position: 0,
+            line: 0,
+            current_char: input.chars().nth(0),
+        }
+    }
+
+    pub fn lex(&mut self) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
+        while let Some(c) = self.current_char {
+            if c.is_whitespace() {
+                self.advance();
+                continue;
+            }
+
+            tokens.push(self.token());
+        }
+        tokens
+    }
+
+    pub fn get_ident(&mut self) -> String {
+        // advance characters until is isn't a alphabetic char or an underscore
+        let mut buffer = String::new();
+
+        while let Some(c) = self.current_char {
+            if c.is_alphabetic() || c == '_' {
+                buffer.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        buffer
+    }
+
+    /// gets the next token
+    pub fn token(&mut self) -> Token {
+        let mut value: Option<TokenValue> = None;
+
+        let token_type = match self.current_char {
+            Some('+') => TokenType::Plus,
+            Some('-') => TokenType::Minus,
+            Some('/') => TokenType::Divide,
+            Some('*') => TokenType::Multiply,
+            Some('=') => TokenType::Equal,
+            Some('(') => TokenType::LParen,
+            Some(')') => TokenType::RParen,
+            Some('{') => TokenType::LCurly,
+            Some('}') => TokenType::RCurly,
+            Some(';') => {
+                self.line += 1;
+                TokenType::Semicolon
+            }
+            None => TokenType::Eof,
+
+            Some(c) if c.is_alphabetic() || c == '_' => {
+                let string = self.get_ident();
+
+                if keyword::Keyword::VARIANTS.contains(&string.as_str()) {
+                    value = Some(TokenValue::Keyword(
+                        keyword::Keyword::from_str(&string).unwrap(),
+                    ));
+
+                    return Token::new(TokenType::Keyword, value); // avoid the second advance
+                } else {
+                    value = Some(TokenValue::Identifier(string));
+
+                    return Token::new(TokenType::Identifier, value); // avoid the second advance
+                }
+            }
+
+            _ => panic!("ERROR"),
+        };
+
+        self.advance();
+        Token::new(token_type, value)
+    }
+
+    pub fn advance(&mut self) {
+        self.position += 1;
+        self.lookahead_position = self.position + 1;
+        self.current_char = self.input.chars().nth(self.position);
+    }
+
+    pub fn peek(&mut self) -> Option<char> {
+        self.input.chars().nth(self.lookahead_position)
+    }
+}
