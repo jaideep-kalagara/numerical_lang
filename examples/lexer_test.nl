@@ -8,7 +8,7 @@ func xyz(x: float, y: float): float {
 
 ; Entry point of the program, returns the exit code of the program
 func main(): integer {
-    if (2.0 * y == z) {
+    if (2.0 * x == z) {
         let a: float = xyz(x, y)
     }
 
