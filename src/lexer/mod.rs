@@ -2,8 +2,9 @@ use std::str::FromStr;
 
 use strum::VariantNames;
 
-use crate::lexer::token::Token;
+use crate::lexer::{error::LexerError, token::Token};
 
+pub mod error;
 pub mod keyword;
 pub mod token;
 
@@ -26,7 +27,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) -> Vec<Token> {
+    pub fn lex(&mut self) -> Result<Vec<Token>, LexerError> {
         let mut tokens: Vec<Token> = Vec::new();
         while let Some(c) = self.current_char {
             if c == '\n' {
@@ -55,9 +56,9 @@ impl Lexer {
                 continue;
             }
 
-            tokens.push(self.token());
+            tokens.push(self.token()?);
         }
-        tokens
+        Ok(tokens)
     }
 
     pub fn get_ident(&mut self) -> String {
@@ -76,7 +77,7 @@ impl Lexer {
         buffer
     }
 
-    pub fn get_number(&mut self) -> Token {
+    pub fn get_number(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::new();
 
         while let Some(c) = self.current_char {
@@ -89,20 +90,22 @@ impl Lexer {
         }
 
         if buffer.contains(".") {
-            let float: f64 = buffer
-                .parse()
-                .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
-            Token::Float(float)
+            let float: f64 = buffer.parse().map_err(|_| LexerError::InvalidNumber {
+                line: self.line,
+                number: buffer,
+            })?;
+            Ok(Token::Float(float))
         } else {
-            let int: i64 = buffer
-                .parse()
-                .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
-            Token::Integer(int)
+            let int: i64 = buffer.parse().map_err(|_| LexerError::InvalidNumber {
+                line: self.line,
+                number: buffer,
+            })?;
+            Ok(Token::Integer(int))
         }
     }
 
     /// gets the next token
-    pub fn token(&mut self) -> Token {
+    pub fn token(&mut self) -> Result<Token, LexerError> {
         let token = match self.current_char {
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
@@ -144,9 +147,9 @@ impl Lexer {
                 let string = self.get_ident();
 
                 if keyword::Keyword::VARIANTS.contains(&string.as_str()) {
-                    return Token::Keyword(keyword::Keyword::from_str(&string).unwrap());
+                    return Ok(Token::Keyword(keyword::Keyword::from_str(&string).unwrap()));
                 } else {
-                    return Token::Identifier(string);
+                    return Ok(Token::Identifier(string));
                 }
             }
 
@@ -156,19 +159,21 @@ impl Lexer {
 
             _ => {
                 if self.current_char.is_some() {
-                    panic!(
-                        "Error on line {}, with character: {}",
-                        self.line,
-                        self.current_char.unwrap()
-                    );
+                    return Err(LexerError::InvalidCharacter {
+                        line: self.line,
+                        char: self.current_char.unwrap(),
+                    });
                 } else {
-                    panic!("Error on line {}", self.line);
+                    return Err(LexerError::InvalidCharacter {
+                        line: self.line,
+                        char: '\0',
+                    });
                 }
             }
         };
 
         self.advance();
-        token
+        Ok(token)
     }
 
     pub fn advance(&mut self) {

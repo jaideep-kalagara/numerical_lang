@@ -1,6 +1,6 @@
 use clap::Parser;
 use numerical_lang::lexer::Lexer;
-use std::{error::Error, fs, path::PathBuf};
+use std::{fs, path::PathBuf, process};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -10,29 +10,40 @@ struct Args {
     output_tokens: bool,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let args = Args::parse();
 
-    let file = fs::read_to_string(&args.filepath)?;
+    let file = match fs::read_to_string(&args.filepath) {
+        Ok(f) => f,
+        Err(e) => {
+            println!("Failed to read file, {}", e);
+            process::exit(1);
+        }
+    };
 
     let mut lexer = Lexer::new(file.clone());
 
     if args.output_tokens {
-        let tokens = lexer.lex();
+        let tokens = match lexer.lex() {
+            Ok(t) => t,
+            Err(e) => {
+                println!("The lexing process encountered an error! {}", e);
+                process::exit(1);
+            }
+        };
         let mut tokens_string = String::new();
         for token in tokens {
             tokens_string.push_str(&token.to_string());
             tokens_string.push('\n');
         }
 
-        let tokens_filepath = format!(
-            "{}.tokens",
-            PathBuf::from(args.filepath)
-                .with_extension("")
-                .to_string_lossy()
-        );
-        fs::write(tokens_filepath, tokens_string)?;
+        let tokens_filepath = format!("{}.tokens", PathBuf::from(args.filepath).to_string_lossy());
+        match fs::write(tokens_filepath, tokens_string) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Failed to write file, {}", e);
+                process::exit(1);
+            }
+        };
     }
-
-    Ok(())
 }

@@ -71,8 +71,13 @@ fn comment_test() {
 }
 
 #[test]
-#[should_panic(expected = "Error on line 2, with character: |")]
+#[should_panic(expected = "Invalid character: '|', line: 2")]
 fn error_test() {
     let mut lexer = Lexer::new("hi+-\n |".to_string());
-    lexer.lex();
+    match lexer.lex() {
+        Ok(_) => {}
+        Err(e) => {
+            panic!("{}", e)
+        }
+    };
 }
