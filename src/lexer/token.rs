@@ -1,7 +1,6 @@
 use crate::lexer::keyword;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-#[strum(serialize_all = "snake_case")]
 pub enum Token {
     // Operators
     Plus,
