@@ -27,7 +27,7 @@ fn main() {
         let tokens = match lexer.lex() {
             Ok(t) => t,
             Err(e) => {
-                println!("The lexing process encountered an error! {}", e);
+                println!("The lexing process encountered an error!\n{}", e);
                 process::exit(1);
             }
         };
