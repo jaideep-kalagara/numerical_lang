@@ -118,7 +118,14 @@ fn keyword_test() {
 
 #[test]
 fn comment_test() {
-    assert_lexer("; Test comment", vec![Token::new(TokenType::Eof, None)]);
+    assert_lexer(
+        "; Test comment\n
+        func ; Test comment",
+        vec![Token::new(
+            TokenType::Keyword,
+            Some(TokenValue::Keyword(Keyword::Func)),
+        )],
+    );
 }
 
 #[test]

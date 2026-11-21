@@ -48,8 +48,11 @@ impl Lexer {
                         self.advance();
                         break;
                     }
+
                     self.advance();
                 }
+
+                continue;
             }
 
             tokens.push(self.token());
