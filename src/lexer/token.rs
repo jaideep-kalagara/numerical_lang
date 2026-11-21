@@ -1,10 +1,8 @@
-use std::fmt::Display;
-
 use crate::lexer::keyword;
 
-#[derive(Debug, Clone, Copy, PartialEq, strum::Display)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 #[strum(serialize_all = "snake_case")]
-pub enum TokenType {
+pub enum Token {
     // Operators
     Plus,
     Minus,
@@ -25,49 +23,22 @@ pub enum TokenType {
     Eof,
 
     // Valued
-    Integer,
-    Float,
-    Keyword,
-    Identifier,
-}
-
-#[derive(Debug, Clone, PartialEq, strum::Display, strum::EnumIs)]
-pub enum TokenValue {
-    #[strum(to_string = "{0}")]
     Integer(i64),
-    #[strum(to_string = "{0}")]
     Float(f64),
-    #[strum(to_string = "{0}")]
     Keyword(keyword::Keyword),
-    #[strum(to_string = "{0}")]
     Identifier(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Token {
-    pub token_type: TokenType,
-    pub value: Option<TokenValue>,
-    // TODO: add more error deducing fields
-}
+use std::fmt;
 
-impl Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.value.is_some() {
-            write!(
-                f,
-                "Token(Type: {}, Value: {})",
-                self.token_type,
-                self.value.clone().unwrap()
-            )?;
-        } else {
-            write!(f, "Token(Type: {})", self.token_type)?;
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Token::Integer(value) => write!(f, "Token(Integer, {value})"),
+            Token::Float(value) => write!(f, "Token(Float, {value})"),
+            Token::Keyword(value) => write!(f, "Token(Keyword, {value})"),
+            Token::Identifier(value) => write!(f, "Token(Identifier, {value})"),
+            token => write!(f, "Token({token:?})"),
         }
-        Ok(())
-    }
-}
-
-impl Token {
-    pub fn new(token_type: TokenType, value: Option<TokenValue>) -> Self {
-        Self { token_type, value }
     }
 }

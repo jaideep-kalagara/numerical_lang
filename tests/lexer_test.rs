@@ -1,9 +1,6 @@
 mod common;
-use numerical_lang::lexer::{
-    Lexer,
-    keyword::Keyword,
-    token::{Token, TokenType, TokenValue},
-};
+
+use numerical_lang::lexer::{Lexer, keyword::Keyword, token::Token};
 
 use crate::common::assert_lexer;
 
@@ -12,119 +9,64 @@ fn basic_test() {
     assert_lexer(
         "+-*/,",
         vec![
-            Token::new(TokenType::Plus, None),
-            Token::new(TokenType::Minus, None),
-            Token::new(TokenType::Multiply, None),
-            Token::new(TokenType::Divide, None),
-            Token::new(TokenType::Comma, None),
+            Token::Plus,
+            Token::Minus,
+            Token::Multiply,
+            Token::Divide,
+            Token::Comma,
         ],
     );
 }
 
 #[test]
 fn parentheses_test() {
-    assert_lexer(
-        "()",
-        vec![
-            Token::new(TokenType::LParen, None),
-            Token::new(TokenType::RParen, None),
-        ],
-    );
-    assert_lexer(
-        "{}",
-        vec![
-            Token::new(TokenType::LCurly, None),
-            Token::new(TokenType::RCurly, None),
-        ],
-    );
+    assert_lexer("()", vec![Token::LParen, Token::RParen]);
+
+    assert_lexer("{}", vec![Token::LCurly, Token::RCurly]);
 }
 
 #[test]
 fn inequality_test() {
-    assert_lexer(
-        "<>",
-        vec![
-            Token::new(TokenType::LesserThan, None),
-            Token::new(TokenType::GreaterThan, None),
-        ],
-    );
+    assert_lexer("<>", vec![Token::LesserThan, Token::GreaterThan]);
+
     assert_lexer(
         "== >= <=",
         vec![
-            Token::new(TokenType::DoubleEqual, None),
-            Token::new(TokenType::GreaterThanEqualTo, None),
-            Token::new(TokenType::LesserThanEqualTo, None),
+            Token::DoubleEqual,
+            Token::GreaterThanEqualTo,
+            Token::LesserThanEqualTo,
         ],
     );
 }
 
 #[test]
 fn identifier_test() {
-    assert_lexer(
-        "hello",
-        vec![Token::new(
-            TokenType::Identifier,
-            Some(TokenValue::Identifier("hello".to_string())),
-        )],
-    );
+    assert_lexer("hello", vec![Token::Identifier("hello".to_string())]);
 }
 
 #[test]
 fn number_test() {
-    assert_lexer(
-        "10",
-        vec![Token::new(
-            TokenType::Integer,
-            Some(TokenValue::Integer(10)),
-        )],
-    );
-    assert_lexer(
-        "10.5",
-        vec![Token::new(TokenType::Float, Some(TokenValue::Float(10.5)))],
-    )
+    assert_lexer("10", vec![Token::Integer(10)]);
+
+    assert_lexer("10.5", vec![Token::Float(10.5)]);
 }
 
 #[test]
 fn keyword_test() {
-    assert_lexer(
-        "if",
-        vec![Token::new(
-            TokenType::Keyword,
-            Some(TokenValue::Keyword(Keyword::If)),
-        )],
-    );
-    assert_lexer(
-        "let",
-        vec![Token::new(
-            TokenType::Keyword,
-            Some(TokenValue::Keyword(Keyword::Let)),
-        )],
-    );
-    assert_lexer(
-        "func",
-        vec![Token::new(
-            TokenType::Keyword,
-            Some(TokenValue::Keyword(Keyword::Func)),
-        )],
-    );
-    assert_lexer(
-        "return",
-        vec![Token::new(
-            TokenType::Keyword,
-            Some(TokenValue::Keyword(Keyword::Return)),
-        )],
-    );
+    assert_lexer("if", vec![Token::Keyword(Keyword::If)]);
+
+    assert_lexer("let", vec![Token::Keyword(Keyword::Let)]);
+
+    assert_lexer("func", vec![Token::Keyword(Keyword::Func)]);
+
+    assert_lexer("return", vec![Token::Keyword(Keyword::Return)]);
 }
 
 #[test]
 fn comment_test() {
     assert_lexer(
-        "; Test comment\n
-        func ; Test comment",
-        vec![Token::new(
-            TokenType::Keyword,
-            Some(TokenValue::Keyword(Keyword::Func)),
-        )],
+        "; Test comment\nfunc ; Test comment",
+        vec![Token::Keyword(Keyword::Func)],
     );
 }
 

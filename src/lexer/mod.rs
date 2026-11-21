@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use strum::VariantNames;
 
-use crate::lexer::token::{Token, TokenType, TokenValue};
+use crate::lexer::token::Token;
 
 pub mod keyword;
 pub mod token;
@@ -76,7 +76,7 @@ impl Lexer {
         buffer
     }
 
-    pub fn get_number(&mut self) -> TokenValue {
+    pub fn get_number(&mut self) -> Token {
         let mut buffer = String::new();
 
         while let Some(c) = self.current_char {
@@ -92,81 +92,66 @@ impl Lexer {
             let float: f64 = buffer
                 .parse()
                 .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
-            TokenValue::Float(float)
+            Token::Float(float)
         } else {
             let int: i64 = buffer
                 .parse()
                 .unwrap_or_else(|_| panic!("Failed to lex number, {}", buffer));
-            TokenValue::Integer(int)
+            Token::Integer(int)
         }
     }
 
     /// gets the next token
     pub fn token(&mut self) -> Token {
-        let mut value: Option<TokenValue> = None;
-
-        let token_type = match self.current_char {
-            Some('+') => TokenType::Plus,
-            Some('-') => TokenType::Minus,
-            Some('/') => TokenType::Divide,
-            Some('*') => TokenType::Multiply,
+        let token = match self.current_char {
+            Some('+') => Token::Plus,
+            Some('-') => Token::Minus,
+            Some('/') => Token::Divide,
+            Some('*') => Token::Multiply,
             Some('=') => {
                 if self.peek() == Some('=') {
                     self.advance();
-                    TokenType::DoubleEqual
+                    Token::DoubleEqual
                 } else {
-                    TokenType::Equal
+                    Token::Equal
                 }
             }
             Some('>') => {
                 if self.peek() == Some('=') {
                     self.advance();
-                    TokenType::GreaterThanEqualTo
+                    Token::GreaterThanEqualTo
                 } else {
-                    TokenType::GreaterThan
+                    Token::GreaterThan
                 }
             }
             Some('<') => {
                 if self.peek() == Some('=') {
                     self.advance();
-                    TokenType::LesserThanEqualTo
+                    Token::LesserThanEqualTo
                 } else {
-                    TokenType::LesserThan
+                    Token::LesserThan
                 }
             }
-            Some('(') => TokenType::LParen,
-            Some(')') => TokenType::RParen,
-            Some('{') => TokenType::LCurly,
-            Some('}') => TokenType::RCurly,
-            Some(':') => TokenType::Colon,
-            Some(',') => TokenType::Comma,
-            None => TokenType::Eof,
+            Some('(') => Token::LParen,
+            Some(')') => Token::RParen,
+            Some('{') => Token::LCurly,
+            Some('}') => Token::RCurly,
+            Some(':') => Token::Colon,
+            Some(',') => Token::Comma,
+            None => Token::Eof,
 
             Some(c) if c.is_alphabetic() || c == '_' => {
                 let string = self.get_ident();
 
                 if keyword::Keyword::VARIANTS.contains(&string.as_str()) {
-                    value = Some(TokenValue::Keyword(
-                        keyword::Keyword::from_str(&string).unwrap(),
-                    ));
-
-                    return Token::new(TokenType::Keyword, value); // avoid the second advance
+                    return Token::Keyword(keyword::Keyword::from_str(&string).unwrap());
                 } else {
-                    value = Some(TokenValue::Identifier(string));
-
-                    return Token::new(TokenType::Identifier, value); // avoid the second advance
+                    return Token::Identifier(string);
                 }
             }
 
-            // TODO: decide if numbers can start with decimal point
             Some(c) if c.is_numeric() => {
-                value = Some(self.get_number());
-                if value.clone().unwrap().is_float() {
-                    // TODO: no unwrap
-                    return Token::new(TokenType::Float, value);
-                } else {
-                    return Token::new(TokenType::Integer, value);
-                }
+                return self.get_number();
             }
 
             _ => {
@@ -183,7 +168,7 @@ impl Lexer {
         };
 
         self.advance();
-        Token::new(token_type, value)
+        token
     }
 
     pub fn advance(&mut self) {
