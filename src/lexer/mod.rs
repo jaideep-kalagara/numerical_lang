@@ -159,7 +159,7 @@ impl Lexer {
             Some(c) if c.is_numeric() => {
                 value = Some(self.get_number());
                 if value.clone().unwrap().is_float() {
-                    // TODO: no unwarp
+                    // TODO: no unwrap
                     return Token::new(TokenType::Float, value);
                 } else {
                     return Token::new(TokenType::Integer, value);
