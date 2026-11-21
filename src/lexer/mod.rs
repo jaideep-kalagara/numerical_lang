@@ -2,14 +2,10 @@ use std::str::FromStr;
 
 use strum::VariantNames;
 
-use crate::{
-    keyword::{self},
-    token::{
-        Token,
-        TokenType::{self},
-        TokenValue::{self},
-    },
-};
+use crate::lexer::token::{Token, TokenType, TokenValue};
+
+pub mod keyword;
+pub mod token;
 
 pub struct Lexer {
     input: String,
@@ -46,12 +42,14 @@ impl Lexer {
 
             // Handle comments
             if c == ';' {
-                while let Some(c) = self.current_char
-                    && c != '\n'
-                {
+                while let Some(c) = self.current_char {
+                    if c == '\n' {
+                        self.line += 1;
+                        self.advance();
+                        break;
+                    }
                     self.advance();
                 }
-                self.advance();
             }
 
             tokens.push(self.token());

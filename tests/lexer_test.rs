@@ -1,7 +1,7 @@
 mod common;
-use numerical_lang::{
+use numerical_lang::lexer::{
+    Lexer,
     keyword::Keyword,
-    lexer::Lexer,
     token::{Token, TokenType, TokenValue},
 };
 

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::keyword::{self};
+use crate::lexer::keyword;
 
 #[derive(Debug, Clone, Copy, PartialEq, strum::Display)]
 #[strum(serialize_all = "snake_case")]
