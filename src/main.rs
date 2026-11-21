@@ -1,33 +1,46 @@
-use clap::Parser;
 use numerical_lang::lexer::Lexer;
+use pico_args::Arguments;
 use std::{fs, path::PathBuf, process};
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    filepath: String,
-    #[arg(short = 't', long, action=clap::ArgAction::SetTrue)]
+pub struct ProgramArgs {
     output_tokens: bool,
+    filepath: String,
 }
 
 fn main() {
-    let args = Args::parse();
+    let mut args = Arguments::from_env();
 
-    let file = match fs::read_to_string(&args.filepath) {
+    if args.contains(["-h", "--help"]) {
+        println!("Usage: nlc [-t, --output-tokens] <FILEPATH>");
+    }
+
+    let p_args = ProgramArgs {
+        output_tokens: args.contains(["-t", "--output-tokens"]),
+        filepath: match args.free_from_str() {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("Required argument <FILEPATH> missing");
+                process::exit(1);
+            }
+        },
+    };
+
+    let file = match fs::read_to_string(&p_args.filepath) {
         Ok(f) => f,
         Err(e) => {
-            println!("Failed to read file, {}", e);
+            eprintln!("Failed to read file, {}", e);
             process::exit(1);
         }
     };
 
     let mut lexer = Lexer::new(file.clone());
 
-    if args.output_tokens {
+    // Output tokens file
+    if p_args.output_tokens {
         let tokens = match lexer.lex() {
             Ok(t) => t,
             Err(e) => {
-                println!("The lexing process encountered an error!\n{}", e);
+                eprintln!("The lexing process encountered an error!\n{}", e);
                 process::exit(1);
             }
         };
@@ -37,13 +50,21 @@ fn main() {
             tokens_string.push('\n');
         }
 
-        let tokens_filepath = format!("{}.tokens", PathBuf::from(args.filepath).to_string_lossy());
+        let tokens_filepath = format!(
+            "{}.tokens",
+            PathBuf::from(p_args.filepath).to_string_lossy()
+        );
         match fs::write(tokens_filepath, tokens_string) {
             Ok(f) => f,
             Err(e) => {
-                println!("Failed to write file, {}", e);
+                eprintln!("Failed to write file, {}", e);
                 process::exit(1);
             }
         };
+    }
+
+    let remaining = args.finish();
+    if !remaining.is_empty() {
+        eprintln!("Warning: unused arguments left: {:?}.", remaining);
     }
 }

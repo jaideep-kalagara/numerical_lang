@@ -26,6 +26,7 @@ pub enum Token {
     Float(f64),
     Keyword(keyword::Keyword),
     Identifier(String),
+    String(String),
 }
 
 use std::fmt;

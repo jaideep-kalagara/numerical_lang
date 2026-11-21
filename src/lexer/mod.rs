@@ -77,6 +77,39 @@ impl Lexer {
         buffer
     }
 
+    pub fn get_string(&mut self) -> Result<String, LexerError> {
+        // advance characters until is isn't a alphabetic char or an underscore
+        let mut buffer = String::new();
+
+        // consume the first quote
+        self.advance();
+        let mut terminated = false;
+
+        while let Some(c) = self.current_char {
+            if c == '"' {
+                terminated = true;
+                break;
+            }
+
+            if c == '\n' {
+                return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+            }
+
+            if c == '\\' {
+                // TODO: Handle escape sequences in strings
+                unimplemented!()
+            }
+
+            buffer.push(c);
+            self.advance();
+        }
+
+        if !terminated {
+            return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+        }
+        Ok(buffer)
+    }
+
     pub fn get_number(&mut self) -> Result<Token, LexerError> {
         let mut buffer = String::new();
 
@@ -141,6 +174,7 @@ impl Lexer {
             Some('}') => Token::RCurly,
             Some(':') => Token::Colon,
             Some(',') => Token::Comma,
+            Some('\"') => Token::String(self.get_string()?),
             None => Token::Eof,
 
             Some(c) if c.is_alphabetic() || c == '_' => {
@@ -164,10 +198,7 @@ impl Lexer {
                         char: self.current_char.unwrap(),
                     });
                 } else {
-                    return Err(LexerError::InvalidCharacter {
-                        line: self.line,
-                        char: '\0',
-                    });
+                    return Err(LexerError::InvalidCharacterWithUnknownInfo { line: self.line });
                 }
             }
         };

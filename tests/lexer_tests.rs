@@ -71,8 +71,23 @@ fn comment_test() {
 }
 
 #[test]
+fn string_test() {
+    assert_lexer("\"Test\"", vec![Token::String("Test".to_string())]);
+}
+#[test]
+fn string_error_test() {
+    let mut lexer = Lexer::new("\"Test".to_string());
+    match lexer.lex() {
+        Ok(_) => {}
+        Err(e) => {
+            panic!("{}", e)
+        }
+    };
+}
+
+#[test]
 #[should_panic(expected = "Invalid character: '|', line: 2")]
-fn error_test() {
+fn invalid_character_error_test() {
     let mut lexer = Lexer::new("hi+-\n |".to_string());
     match lexer.lex() {
         Ok(_) => {}
