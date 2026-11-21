@@ -14,20 +14,24 @@ fn basic_test() {
             Token::Multiply,
             Token::Divide,
             Token::Comma,
+            Token::Eof,
         ],
     );
 }
 
 #[test]
 fn parentheses_test() {
-    assert_lexer("()", vec![Token::LParen, Token::RParen]);
+    assert_lexer("()", vec![Token::LParen, Token::RParen, Token::Eof]);
 
-    assert_lexer("{}", vec![Token::LCurly, Token::RCurly]);
+    assert_lexer("{}", vec![Token::LCurly, Token::RCurly, Token::Eof]);
 }
 
 #[test]
 fn inequality_test() {
-    assert_lexer("<>", vec![Token::LesserThan, Token::GreaterThan]);
+    assert_lexer(
+        "<>",
+        vec![Token::LesserThan, Token::GreaterThan, Token::Eof],
+    );
 
     assert_lexer(
         "== >= <=",
@@ -35,48 +39,56 @@ fn inequality_test() {
             Token::DoubleEqual,
             Token::GreaterThanEqualTo,
             Token::LesserThanEqualTo,
+            Token::Eof,
         ],
     );
 }
 
 #[test]
 fn identifier_test() {
-    assert_lexer("hello", vec![Token::Identifier("hello".to_string())]);
+    assert_lexer(
+        "hello",
+        vec![Token::Identifier("hello".to_string()), Token::Eof],
+    );
 }
 
 #[test]
 fn number_test() {
-    assert_lexer("10", vec![Token::Integer(10)]);
+    assert_lexer("10", vec![Token::Integer(10), Token::Eof]);
 
-    assert_lexer("10.5", vec![Token::Float(10.5)]);
+    assert_lexer("10.5", vec![Token::Float(10.5), Token::Eof]);
 }
 
 #[test]
 fn keyword_test() {
-    assert_lexer("if", vec![Token::Keyword(Keyword::If)]);
+    assert_lexer("if", vec![Token::Keyword(Keyword::If), Token::Eof]);
 
-    assert_lexer("let", vec![Token::Keyword(Keyword::Let)]);
+    assert_lexer("let", vec![Token::Keyword(Keyword::Let), Token::Eof]);
 
-    assert_lexer("func", vec![Token::Keyword(Keyword::Func)]);
+    assert_lexer("func", vec![Token::Keyword(Keyword::Func), Token::Eof]);
 
-    assert_lexer("return", vec![Token::Keyword(Keyword::Return)]);
+    assert_lexer("return", vec![Token::Keyword(Keyword::Return), Token::Eof]);
 }
 
 #[test]
 fn comment_test() {
     assert_lexer(
         "; Test comment\nfunc ; Test comment",
-        vec![Token::Keyword(Keyword::Func)],
+        vec![Token::Keyword(Keyword::Func), Token::Eof],
     );
 }
 
 #[test]
 fn string_test() {
-    assert_lexer("\"Test\"", vec![Token::String("Test".to_string())]);
+    assert_lexer(
+        "\"Test\"",
+        vec![Token::String("Test".to_string()), Token::Eof],
+    );
 }
 #[test]
+#[should_panic(expected = "Unterminated string literal line: 1")]
 fn string_error_test() {
-    let mut lexer = Lexer::new("\"Test".to_string());
+    let mut lexer = Lexer::new("\"Test");
     match lexer.lex() {
         Ok(_) => {}
         Err(e) => {
@@ -88,7 +100,7 @@ fn string_error_test() {
 #[test]
 #[should_panic(expected = "Invalid character: '|', line: 2")]
 fn invalid_character_error_test() {
-    let mut lexer = Lexer::new("hi+-\n |".to_string());
+    let mut lexer = Lexer::new("hi+-\n |");
     match lexer.lex() {
         Ok(_) => {}
         Err(e) => {

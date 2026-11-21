@@ -24,7 +24,7 @@ static inline void syscall1_noreturn(long number, long arg1)
     __builtin_unreachable();
 }
 
-void nl_print(const char *str)
+void nl_write(const char *str)
 {
     syscall3(SYSCALL_WRITE, 1, (long)str, sizeof(str));
 }

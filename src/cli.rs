@@ -9,12 +9,18 @@ pub struct Cli {
     pub filepath: String,
 }
 
+impl Default for Cli {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Cli {
     pub fn new() -> Self {
         let mut args = Arguments::from_env();
 
         if args.contains(["-h", "--help"]) {
-            println!("Usage: nlc [-t, --output-tokens] <FILEPATH>");
+            Cli::help_msg();
         }
 
         Cli {
@@ -27,6 +33,10 @@ impl Cli {
                 }
             },
         }
+    }
+
+    pub fn help_msg() {
+        println!("Usage: nlc [-t, --output-tokens] <FILEPATH>");
     }
 
     pub fn output_tokens_file(&self, lexer: &mut Lexer) {

@@ -38,6 +38,7 @@ impl fmt::Display for Token {
             Token::Float(value) => write!(f, "Token(Float, {value})"),
             Token::Keyword(value) => write!(f, "Token(Keyword, {value})"),
             Token::Identifier(value) => write!(f, "Token(Identifier, {value})"),
+            Token::String(value) => write!(f, "Token(String, \"{value}\")"),
             token => write!(f, "Token({token:?})"),
         }
     }
