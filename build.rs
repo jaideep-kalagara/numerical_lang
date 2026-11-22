@@ -1,18 +1,17 @@
-use std::path::Path;
 use std::process::Command;
 
 fn main() {
-    let lib_dir = Path::new("libnl");
-
-    println!("cargo:rerun-if-changed=libnl/Makefile");
-    println!("cargo:rerun-if-changed=libnl/libnl.c");
-
-    let status = Command::new("make")
-        .current_dir(lib_dir)
+    let status = Command::new("cargo")
+        .current_dir("nl")
+        .args(["build", "--release"])
         .status()
-        .expect("Failed to run make");
+        .expect("Failed to compile libnl");
 
     if !status.success() {
-        panic!("make failed in libstacks/");
+        panic!("Failed to build libnl");
     }
+
+    println!("cargo:rerun-if-changed=nl/src");
+    println!("cargo:rerun-if-changed=nl/Cargo.toml");
+    println!("cargo:rerun-if-changed=nl/rust-toolchain.toml");
 }
