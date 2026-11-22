@@ -12,7 +12,7 @@ func main(): integer {
         let a: float = xyz(x, y)
     }
 
-    let str: string = "This is a test string literal"
+    let str: string = "This is a test string literal\n"
 
     return 0
 }

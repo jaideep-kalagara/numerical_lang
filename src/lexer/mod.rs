@@ -81,27 +81,37 @@ impl<'a> Lexer<'a> {
         // Consume opening quote
         self.advance();
 
-        while let Some(c) = self.peek() {
-            if c == '"' {
-                // Consume closing quote
-                self.advance();
-                return Ok(buffer);
-            }
+        while let Some(c) = self.advance() {
+            match c {
+                '"' => break,
 
-            if c == '\n' {
-                return Err(LexerError::UnterminatedStringLiteral { line: self.line });
-            }
+                '\\' => match self.advance() {
+                    Some('n') => buffer.push('\n'),
+                    Some('t') => buffer.push('\t'),
+                    Some('\\') => buffer.push('\\'),
+                    Some('"') => buffer.push('"'),
 
-            if c == '\\' {
-                // TODO: Handle escape sequences
-                unimplemented!()
-            }
+                    None => {
+                        return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+                    }
 
-            buffer.push(c);
-            self.advance();
+                    Some(c) => {
+                        return Err(LexerError::UnknownEscapeCodeCharacter {
+                            line: self.line,
+                            char: c,
+                        });
+                    }
+                },
+
+                '\n' => {
+                    return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+                }
+
+                c => buffer.push(c),
+            }
         }
 
-        Err(LexerError::UnterminatedStringLiteral { line: self.line })
+        return Ok(buffer);
     }
 
     pub fn get_number(&mut self) -> Result<Token, LexerError> {

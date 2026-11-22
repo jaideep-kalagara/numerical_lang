@@ -6,6 +6,8 @@ pub enum LexerError {
     InvalidCharacterWithUnknownInfo { line: usize },
     #[strum(serialize = "Unterminated string literal line: {line}")]
     UnterminatedStringLiteral { line: usize },
+    #[strum(serialize = "Unknown escape code character: '{char}', line: {line}")]
+    UnknownEscapeCodeCharacter { line: usize, char: char },
     #[strum(serialize = "Invalid number: \"{number}\", line: {line}")]
     InvalidNumber { line: usize, number: String },
 }

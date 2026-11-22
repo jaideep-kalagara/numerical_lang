@@ -5,7 +5,6 @@ fn main() {
 
     let input = cli.read_input();
     let mut lexer = Lexer::new(input.as_str());
-
     if cli.output_tokens {
         cli.output_tokens_file(&mut lexer);
     }
