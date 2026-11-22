@@ -1,5 +1,4 @@
 /target
-/nl/target
 *.tokens
 *.a
 .vscode
