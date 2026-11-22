@@ -90,24 +90,24 @@ impl<'a> Lexer<'a> {
                     break;
                 }
 
-                '\\' => match self.advance() {
-                    Some('n') => buffer.push('\n'),
-                    Some('t') => buffer.push('\t'),
-                    Some('\\') => buffer.push('\\'),
-                    Some('"') => buffer.push('"'),
+                // TODO: Decide if this is necessary or not.
+                // '\\' => match self.advance() {
+                //     Some('n') => buffer.push_str(r"\n"),
+                //     Some('t') => buffer.push_str(r"\t"),
+                //     Some('\\') => buffer.push_str(r"\"),
+                //     Some('"') => buffer.push_str("\""),
 
-                    None => {
-                        return Err(LexerError::UnterminatedStringLiteral { line: self.line });
-                    }
+                //     None => {
+                //         return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+                //     }
 
-                    Some(c) => {
-                        return Err(LexerError::UnknownEscapeCodeCharacter {
-                            line: self.line,
-                            char: c,
-                        });
-                    }
-                },
-
+                //     Some(c) => {
+                //         return Err(LexerError::UnknownEscapeCodeCharacter {
+                //             line: self.line,
+                //             char: c,
+                //         });
+                //     }
+                // },
                 '\n' => {
                     return Err(LexerError::UnterminatedStringLiteral { line: self.line });
                 }
@@ -119,7 +119,6 @@ impl<'a> Lexer<'a> {
         if !terminated {
             return Err(LexerError::UnterminatedStringLiteral { line: self.line });
         }
-
         return Ok(buffer);
     }
 
