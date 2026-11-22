@@ -11,5 +11,6 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
+colored = "3.1.1"
 pico-args = "0.5.0"
 strum = { version = "0.28.0", features = ["derive", "strum_macros"] }

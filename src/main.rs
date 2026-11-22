@@ -1,3 +1,4 @@
+use colored::Colorize;
 use std::process;
 
 use numerical_lang::{cli::Cli, lexer::Lexer, span::Span};
@@ -9,10 +10,15 @@ fn main() {
     let mut lexer = Lexer::new(input.as_str());
     let tokens = match lexer.lex() {
         Ok(t) => t,
-        Err(e) => {
-            let (line, column) = Span::line_column(&input, e.span().start);
+        Err(errors) => {
+            for e in errors {
+                let (line, column) = Span::line_column(&input, e.span().start);
 
-            println!("Error at line {}, column {}: {}", line, column, e);
+                println!(
+                    "{}",
+                    format!("Error at line {}, column {}: {}", line, column, e).red()
+                );
+            }
             process::exit(1)
         }
     };

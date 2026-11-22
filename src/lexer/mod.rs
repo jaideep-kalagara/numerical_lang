@@ -29,8 +29,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Spanned<Token>>, LexerError> {
+    pub fn lex(&mut self) -> Result<Vec<Spanned<Token>>, Vec<LexerError>> {
         let mut tokens: Vec<Spanned<Token>> = Vec::new();
+        let mut errors: Vec<LexerError> = Vec::new();
 
         while let Some(c) = self.peek() {
             if c.is_whitespace() {
@@ -51,11 +52,17 @@ impl<'a> Lexer<'a> {
                 continue;
             }
 
-            tokens.push(self.token()?);
+            match self.token() {
+                Ok(t) => tokens.push(t),
+                Err(e) => errors.push(e),
+            }
         }
 
         tokens.push(Spanned::new(Token::Eof, self.position, self.position));
 
+        if !errors.is_empty() {
+            return Err(errors);
+        }
         Ok(tokens)
     }
 
@@ -162,6 +169,7 @@ impl<'a> Lexer<'a> {
 
     pub fn token(&mut self) -> Result<Spanned<Token>, LexerError> {
         let start = self.position;
+
         let token = match self.peek() {
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
