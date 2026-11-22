@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int __nl_print(const char *str)
+int __nl_write(const char *str)
 {
     printf(str);
 }

@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf, process};
 
 use pico_args::Arguments;
 
-use crate::lexer::Lexer;
+use crate::{lexer::token::Token, span::Spanned};
 
 pub struct Cli {
     pub output_tokens: bool,
@@ -39,14 +39,7 @@ impl Cli {
         println!("Usage: nlc [-t, --output-tokens] <FILEPATH>");
     }
 
-    pub fn output_tokens_file(&self, lexer: &mut Lexer) {
-        let tokens = match lexer.lex() {
-            Ok(t) => t,
-            Err(e) => {
-                eprintln!("The lexing process encountered an error!\n{}", e);
-                process::exit(1);
-            }
-        };
+    pub fn output_tokens_file(&self, tokens: Vec<Spanned<Token>>) {
         let mut tokens_string = String::new();
         for token in tokens {
             tokens_string.push_str(&token.to_string());

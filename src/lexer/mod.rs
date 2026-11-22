@@ -1,39 +1,38 @@
 use std::{
     iter::Peekable,
-    str::{Chars, FromStr},
+    str::{CharIndices, FromStr},
 };
 
 use strum::VariantNames;
 
-use crate::lexer::{error::LexerError, token::Token};
+use crate::{
+    lexer::{error::LexerError, token::Token},
+    span::{Span, Spanned},
+};
 
 pub mod error;
 pub mod keyword;
 pub mod token;
 
 pub struct Lexer<'a> {
-    input: Peekable<Chars<'a>>,
+    input: Peekable<CharIndices<'a>>,
+    position: usize,
     line: usize,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
-            input: input.chars().peekable(),
+            input: input.char_indices().peekable(),
+            position: 0,
             line: 1,
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, LexerError> {
-        let mut tokens: Vec<Token> = Vec::new();
+    pub fn lex(&mut self) -> Result<Vec<Spanned<Token>>, LexerError> {
+        let mut tokens: Vec<Spanned<Token>> = Vec::new();
 
         while let Some(c) = self.peek() {
-            if c == '\n' {
-                self.line += 1;
-                self.advance();
-                continue;
-            }
-
             if c.is_whitespace() {
                 self.advance();
                 continue;
@@ -55,7 +54,7 @@ impl<'a> Lexer<'a> {
             tokens.push(self.token()?);
         }
 
-        tokens.push(Token::Eof);
+        tokens.push(Spanned::new(Token::Eof, self.position, self.position));
 
         Ok(tokens)
     }
@@ -75,7 +74,7 @@ impl<'a> Lexer<'a> {
         buffer
     }
 
-    pub fn get_string(&mut self) -> Result<String, LexerError> {
+    pub fn get_string(&mut self, start: usize) -> Result<String, LexerError> {
         let mut buffer = String::new();
 
         // Consume opening quote
@@ -109,7 +108,9 @@ impl<'a> Lexer<'a> {
                 //     }
                 // },
                 '\n' => {
-                    return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+                    return Err(LexerError::UnterminatedStringLiteral {
+                        span: Span::new(start, self.position),
+                    });
                 }
 
                 c => buffer.push(c),
@@ -117,12 +118,14 @@ impl<'a> Lexer<'a> {
         }
 
         if !terminated {
-            return Err(LexerError::UnterminatedStringLiteral { line: self.line });
+            return Err(LexerError::UnterminatedStringLiteral {
+                span: Span::new(start, self.position),
+            });
         }
         return Ok(buffer);
     }
 
-    pub fn get_number(&mut self) -> Result<Token, LexerError> {
+    pub fn get_number(&mut self, start: usize) -> Result<Spanned<Token>, LexerError> {
         let mut buffer = String::new();
 
         while let Some(c) = self.peek() {
@@ -133,25 +136,32 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-
+        let span = Span::new(start, self.position);
         if buffer.contains('.') {
             let float: f64 = buffer.parse().map_err(|_| LexerError::InvalidNumber {
-                line: self.line,
+                span,
                 number: buffer.clone(),
             })?;
 
-            Ok(Token::Float(float))
+            Ok(Spanned {
+                value: Token::Float(float),
+                span,
+            })
         } else {
             let int: i64 = buffer.parse().map_err(|_| LexerError::InvalidNumber {
-                line: self.line,
+                span,
                 number: buffer.clone(),
             })?;
 
-            Ok(Token::Integer(int))
+            Ok(Spanned {
+                value: Token::Integer(int),
+                span,
+            })
         }
     }
 
-    pub fn token(&mut self) -> Result<Token, LexerError> {
+    pub fn token(&mut self) -> Result<Spanned<Token>, LexerError> {
+        let start = self.position;
         let token = match self.peek() {
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
@@ -192,30 +202,39 @@ impl<'a> Lexer<'a> {
             Some(':') => Token::Colon,
             Some(',') => Token::Comma,
 
-            Some('"') => Token::String(self.get_string()?),
+            Some('"') => Token::String(self.get_string(start)?),
 
             Some(c) if c.is_alphabetic() || c == '_' => {
                 let string = self.get_ident();
 
+                let span = Span::new(start, self.position);
                 if keyword::Keyword::VARIANTS.contains(&string.as_str()) {
-                    return Ok(Token::Keyword(keyword::Keyword::from_str(&string).unwrap()));
+                    return Ok(Spanned {
+                        value: Token::Keyword(keyword::Keyword::from_str(&string).unwrap()),
+                        span,
+                    });
                 } else {
-                    return Ok(Token::Identifier(string));
+                    return Ok(Spanned {
+                        value: Token::Identifier(string),
+                        span,
+                    });
                 }
             }
 
             Some(c) if c.is_numeric() => {
-                return self.get_number();
+                return self.get_number(start);
             }
 
             Some(c) => {
+                self.advance();
+
                 return Err(LexerError::InvalidCharacter {
-                    line: self.line,
+                    span: Span::new(start, self.position),
                     char: c,
                 });
             }
 
-            None => return Ok(Token::Eof),
+            None => Token::Eof,
         };
 
         // Consume the token's first character.
@@ -223,18 +242,29 @@ impl<'a> Lexer<'a> {
         // was already consumed above.
         self.advance();
 
-        Ok(token)
+        Ok(Spanned::new(token, start, self.position))
     }
 
     pub fn advance(&mut self) -> Option<char> {
-        self.input.next()
+        match self.input.next() {
+            Some((index, c)) => {
+                self.position = index + c.len_utf8();
+
+                if c == '\n' {
+                    self.line += 1;
+                }
+
+                Some(c)
+            }
+            None => None,
+        }
     }
 
     pub fn peek(&mut self) -> Option<char> {
-        self.input.peek().copied()
+        self.input.peek().map(|(_, c)| *c)
     }
 
     pub fn peek_nth(&self, n: usize) -> Option<char> {
-        self.input.clone().nth(n)
+        self.input.clone().nth(n).map(|(_, c)| c)
     }
 }
