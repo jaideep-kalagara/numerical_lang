@@ -81,9 +81,14 @@ impl<'a> Lexer<'a> {
         // Consume opening quote
         self.advance();
 
+        let mut terminated = false;
+
         while let Some(c) = self.advance() {
             match c {
-                '"' => break,
+                '"' => {
+                    terminated = true;
+                    break;
+                }
 
                 '\\' => match self.advance() {
                     Some('n') => buffer.push('\n'),
@@ -109,6 +114,10 @@ impl<'a> Lexer<'a> {
 
                 c => buffer.push(c),
             }
+        }
+
+        if !terminated {
+            return Err(LexerError::UnterminatedStringLiteral { line: self.line });
         }
 
         return Ok(buffer);

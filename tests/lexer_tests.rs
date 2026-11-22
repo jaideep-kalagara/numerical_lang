@@ -81,8 +81,8 @@ fn comment_test() {
 #[test]
 fn string_test() {
     assert_lexer(
-        "\"Test\"",
-        vec![Token::String("Test".to_string()), Token::Eof],
+        "\"Test\\n\"",
+        vec![Token::String("Test\n".to_string()), Token::Eof],
     );
 }
 #[test]
