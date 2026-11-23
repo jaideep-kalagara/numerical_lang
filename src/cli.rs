@@ -2,10 +2,11 @@ use std::{fs, path::PathBuf, process};
 
 use pico_args::Arguments;
 
-use crate::{lexer::token::Token, span::Spanned};
+use crate::{lexer::token::Token, parser::expr::Expression, span::Spanned};
 
 pub struct Cli {
     pub output_tokens: bool,
+    pub output_ast: bool,
     pub filepath: String,
 }
 
@@ -25,6 +26,7 @@ impl Cli {
 
         Cli {
             output_tokens: args.contains(["-t", "--output-tokens"]),
+            output_ast: args.contains(["-a", "--output-ast"]),
             filepath: match args.free_from_str() {
                 Ok(s) => s,
                 Err(_) => {
@@ -39,7 +41,7 @@ impl Cli {
         println!("Usage: nlc [-t, --output-tokens] <FILEPATH>");
     }
 
-    pub fn output_tokens_file(&self, tokens: Vec<Spanned<Token>>) {
+    pub fn output_tokens_file(&self, tokens: &Vec<Spanned<Token>>) {
         let mut tokens_string = String::new();
         for token in tokens {
             tokens_string.push_str(&token.to_string());
@@ -48,6 +50,17 @@ impl Cli {
 
         let tokens_filepath = format!("{}.tokens", PathBuf::from(&self.filepath).to_string_lossy());
         match fs::write(tokens_filepath, tokens_string) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Failed to write file, {}", e);
+                process::exit(1);
+            }
+        };
+    }
+
+    pub fn output_ast_file(&self, expr: &Expression) {
+        let tokens_filepath = format!("{}.ast", PathBuf::from(&self.filepath).to_string_lossy());
+        match fs::write(tokens_filepath, expr.to_string()) {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("Failed to write file, {}", e);

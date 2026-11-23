@@ -91,8 +91,8 @@ fn string_error_test() {
     let mut lexer = Lexer::new("\"Test");
     match lexer.lex() {
         Ok(_) => {}
-        Err(e) => {
-            panic!("{}", e)
+        Err(errors) => {
+            panic!("{}", errors[0])
         }
     };
 }
@@ -103,8 +103,8 @@ fn invalid_character_error_test() {
     let mut lexer = Lexer::new("hi+-\n |");
     match lexer.lex() {
         Ok(_) => {}
-        Err(e) => {
-            panic!("{}", e)
+        Err(errors) => {
+            panic!("{}", errors[0])
         }
     };
 }
