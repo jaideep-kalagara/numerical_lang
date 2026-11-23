@@ -11,6 +11,10 @@ pub enum Expression {
         operator: BinaryOp,
         rhs: Box<Expression>,
     },
+    Unary {
+        operator: BinaryOp,
+        rhs: Box<Expression>,
+    },
 }
 
 impl Display for Expression {
@@ -25,6 +29,7 @@ impl Display for Expression {
 
                 Ok(())
             }
+            Expression::Unary { operator, rhs } => write!(f, "{}{}", operator, rhs),
         }
     }
 }

@@ -37,7 +37,7 @@ fn main() {
             process::exit(1)
         }
     };
-    if cli.output_tokens {
+    if cli.output_ast {
         cli.output_ast_file(&expr);
     }
 }

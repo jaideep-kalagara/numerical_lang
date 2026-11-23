@@ -1,4 +1,8 @@
-use crate::{lexer::token::Token, parser::error::ParserError, span::Spanned};
+use crate::{
+    lexer::token::Token,
+    parser::error::ParserError,
+    span::{Span, Spanned},
+};
 
 #[derive(Debug, Clone, PartialEq, strum::Display)]
 pub enum BinaryOp {
@@ -19,23 +23,28 @@ impl BinaryOp {
             BinaryOp::Mul | BinaryOp::Div => (3, 4),
         }
     }
+
+    pub fn prefix_binding_power(&self, span: Span) -> Result<((), u8), ParserError> {
+        match self {
+            BinaryOp::Add | BinaryOp::Sub => Ok(((), 6)),
+            op => Err(ParserError::InvalidUnaryOp {
+                op: op.clone(),
+                span,
+            }),
+        }
+    }
 }
 
-impl TryFrom<&Spanned<Token>> for BinaryOp {
-    fn try_from(token: &Spanned<Token>) -> Result<Self, Self::Error> {
+impl BinaryOp {
+    pub fn from_token(token: &Spanned<Token>) -> Option<BinaryOp> {
         match token.value {
-            Token::Plus => Ok(BinaryOp::Add),
-            Token::Minus => Ok(BinaryOp::Sub),
-            Token::Multiply => Ok(BinaryOp::Mul),
-            Token::Divide => Ok(BinaryOp::Div),
+            Token::Plus => Some(BinaryOp::Add),
+            Token::Minus => Some(BinaryOp::Sub),
+            Token::Multiply => Some(BinaryOp::Mul),
+            Token::Divide => Some(BinaryOp::Div),
             _ => {
-                return Err(ParserError::InvalidBinaryOp {
-                    token: token.value.clone(),
-                    span: token.span,
-                });
+                return None;
             }
         }
     }
-
-    type Error = ParserError;
 }

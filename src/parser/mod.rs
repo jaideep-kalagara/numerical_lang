@@ -22,49 +22,92 @@ impl Parser {
         }
     }
 
-    /// Consumes and gets an expression.
     pub fn expr(&mut self) -> Result<Expression, ParserError> {
-        self.expr_bp(0)
+        let expr = self.expr_bp(0)?;
+
+        match self.input.peek() {
+            Some(Spanned {
+                value: Token::Eof, ..
+            }) => Ok(expr),
+
+            Some(token) => Err(ParserError::InvalidToken {
+                token: token.value.clone(),
+                span: token.span,
+            }),
+
+            None => unreachable!("Lexer should always emit EOF"),
+        }
     }
 
-    fn expr_bp(&mut self, min_bp: u8) -> Result<Expression, ParserError> {
-        // Parse the left-hand side.
-        let mut lhs = match self.input.next() {
+    fn parse_primary(&mut self) -> Result<Expression, ParserError> {
+        match self.advance() {
             Some(Spanned {
                 value: Token::Integer(v),
                 ..
-            }) => Expression::IntValue(v),
+            }) => Ok(Expression::IntValue(v)),
 
             Some(Spanned {
                 value: Token::Float(v),
                 ..
-            }) => Expression::FloatValue(v),
+            }) => Ok(Expression::FloatValue(v)),
+
+            // Parenthesized expression.
+            Some(Spanned {
+                value: Token::LParen,
+                ..
+            }) => {
+                let expr = self.expr_bp(0)?;
+
+                self.expect(Token::RParen)?;
+
+                Ok(expr)
+            }
+
+            // Unary expressions.
+            Some(token) if matches!(token.value, Token::Plus | Token::Minus) => {
+                let op =
+                    BinaryOp::from_token(&token).expect("Plus and Minus must be binary operators");
+
+                let ((), r_bp) = op.prefix_binding_power(token.span)?;
+
+                let rhs = self.expr_bp(r_bp)?;
+
+                Ok(Expression::Unary {
+                    operator: op,
+                    rhs: Box::new(rhs),
+                })
+            }
 
             Some(Spanned {
                 value: Token::Eof,
                 span,
-            }) => {
-                return Err(ParserError::UnexpectedEof { span });
-            }
+            }) => Err(ParserError::UnexpectedEof { span }),
 
-            Some(token) => {
-                return Err(ParserError::InvalidToken {
-                    token: token.value,
-                    span: token.span,
-                });
-            }
+            Some(token) => Err(ParserError::InvalidToken {
+                token: token.value,
+                span: token.span,
+            }),
 
             None => unreachable!("Lexer should always emit EOF"),
-        };
+        }
+    }
 
-        // Parse infix expressions.
+    fn expr_bp(&mut self, min_bp: u8) -> Result<Expression, ParserError> {
+        let mut lhs = self.parse_primary()?;
+
         loop {
             let op = match self.input.peek() {
+                // Expression boundaries.
                 Some(Spanned {
-                    value: Token::Eof, ..
+                    value: Token::Eof | Token::RParen,
+                    ..
                 }) => break,
 
-                Some(token) => BinaryOp::try_from(token)?,
+                // Check whether the next token is an infix operator.
+                Some(token) => match BinaryOp::from_token(token) {
+                    Some(op) => op,
+                    None => break,
+                },
 
                 None => unreachable!("Lexer should always emit EOF"),
             };
@@ -77,7 +120,7 @@ impl Parser {
             }
 
             // Consume the operator.
-            self.input.next();
+            self.advance();
 
             let rhs = self.expr_bp(r_bp)?;
 
@@ -89,5 +132,35 @@ impl Parser {
         }
 
         Ok(lhs)
+    }
+
+    pub fn advance(&mut self) -> Option<Spanned<Token>> {
+        self.input.next()
+    }
+
+    pub fn expect(&mut self, expected: Token) -> Result<Spanned<Token>, ParserError> {
+        match self.advance() {
+            Some(Spanned {
+                value: Token::Eof,
+                span,
+            }) => Err(ParserError::UnexpectedEof { span }),
+
+            Some(token) if token.value == expected => Ok(token),
+
+            Some(token) => Err(ParserError::ExpectedToken {
+                expected,
+                got: token.value,
+                span: token.span,
+            }),
+
+            None => unreachable!("Lexer should always emit EOF"),
+        }
+    }
+
+    pub fn check(&mut self, expected: &Token) -> bool {
+        matches!(
+            self.input.peek(),
+            Some(token) if &token.value == expected
+        )
     }
 }
